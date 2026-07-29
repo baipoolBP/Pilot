@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npm install 2>&1)",
+      "PowerShell(Get-Command node -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command npm -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Program Files\\\\nodejs\",\"C:\\\\Program Files \\(x86\\)\\\\nodejs\",\"$env:LOCALAPPDATA\\\\Programs\" -ErrorAction SilentlyContinue -Recurse -Filter \"node.exe\" -ErrorAction SilentlyContinue | Select-Object -First 5 FullName)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Program Files\\\\nodejs\",\"C:\\\\Program Files \\(x86\\)\\\\nodejs\",\"$env:LOCALAPPDATA\\\\Programs\" -Recurse -Filter \"node.exe\" -ErrorAction SilentlyContinue | Select-Object -First 5 FullName)"
+    ]
+  }
+}
