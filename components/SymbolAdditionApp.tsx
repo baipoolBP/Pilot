@@ -102,9 +102,9 @@ export default function SymbolAdditionApp() {
     timeLeft <= 8 ? "bg-red-500" : timeLeft <= 15 ? "bg-yellow-400" : "bg-emerald-500";
 
   return (
-    <div className="min-h-screen flex flex-col items-center px-4 py-8">
+    <div className="min-h-screen flex flex-col items-center px-4 py-4">
       <div className="w-full max-w-3xl">
-        <div className="flex items-center justify-between mb-3 text-sm text-slate-300">
+        <div className="flex items-center justify-between mb-2 text-sm text-slate-300">
           <span>
             รอบที่ <span className="font-bold text-white">{roundIndex + 1}</span> / {TOTAL_ROUNDS}
           </span>
@@ -113,28 +113,28 @@ export default function SymbolAdditionApp() {
           </span>
         </div>
 
-        {/* legend, visible for the whole test */}
-        <div className="bg-slate-800/70 border border-slate-700 rounded-2xl p-4 mb-4 shadow-xl">
-          <p className="text-xs text-slate-400 mb-2">
+        {/* legend, pinned in view for the whole test so it never scrolls away */}
+        <div className="sticky top-14 z-10 bg-slate-800/95 backdrop-blur border border-slate-700 rounded-2xl p-3 mb-4 shadow-xl">
+          <p className="text-xs text-slate-400 mb-1.5">
             ตารางสัญลักษณ์แทนตัวเลข (จำไว้ให้แม่น จะใช้ตลอดการทดสอบ)
           </p>
           <div className="flex w-full">
             {legend.map((e) => (
-              <div key={e.symbol} className="flex-1 text-center text-2xl sm:text-3xl">
+              <div key={e.symbol} className="flex-1 text-center text-xl sm:text-2xl">
                 {e.symbol}
               </div>
             ))}
           </div>
-          <div className="flex w-full mt-2">
+          <div className="flex w-full mt-1">
             {legend.map((e) => (
-              <div key={e.symbol} className="flex-1 text-center text-sm sm:text-base text-sky-400 font-semibold">
+              <div key={e.symbol} className="flex-1 text-center text-xs sm:text-sm text-sky-400 font-semibold">
                 {e.value}
               </div>
             ))}
           </div>
         </div>
 
-        <div className="bg-slate-800/70 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <div className="bg-slate-800/70 border border-slate-700 rounded-2xl p-4 shadow-xl">
           {phase === "countdown" ? (
             <>
               <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden mb-2">
@@ -143,29 +143,29 @@ export default function SymbolAdditionApp() {
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <p className="text-center text-sm text-slate-400 mb-4">
+              <p className="text-center text-sm text-slate-400 mb-2">
                 เหลือเวลา {timeLeft.toFixed(1)} วินาที — บวกสะสมในใจจากสัญลักษณ์แรกสุดไปเรื่อยๆ
               </p>
             </>
           ) : (
-            <p className="text-center text-sm font-semibold text-amber-400 mb-4">
+            <p className="text-center text-sm font-semibold text-amber-400 mb-2">
               ⏰ หมดเวลาแล้ว! กรอกผลรวมที่บวกได้จากสัญลักษณ์แรกสุดจนถึงตัวที่คุณบวกถึง
             </p>
           )}
 
-          <div className="rounded-xl bg-slate-900/50 border border-slate-700 p-4">
-            <div className="flex justify-center gap-8 sm:gap-16">
+          <div className="rounded-xl bg-slate-900/50 border border-slate-700 p-3">
+            <div className="flex justify-center gap-6 sm:gap-10">
               {[0, halfLength].map((start) => (
                 <div key={start} className="flex flex-col divide-y divide-slate-700/40">
                   {currentRound.symbols.slice(start, start + halfLength).map((s, i) => (
-                    <div key={start + i} className="w-14 sm:w-16 text-2xl sm:text-3xl font-bold text-center py-2">
+                    <div key={start + i} className="w-12 sm:w-14 text-xl sm:text-2xl font-bold text-center py-1">
                       {s}
                     </div>
                   ))}
                 </div>
               ))}
             </div>
-            <p className="text-center text-xs text-slate-500 mt-3">
+            <p className="text-center text-xs text-slate-500 mt-2">
               บวกแถวซ้ายให้ครบก่อน แล้วค่อยบวกต่อที่แถวขวา
             </p>
           </div>
