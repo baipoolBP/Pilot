@@ -103,7 +103,7 @@ export default function SymbolAdditionApp() {
 
   return (
     <div className="min-h-screen flex flex-col items-center px-4 py-8">
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-3xl">
         <div className="flex items-center justify-between mb-3 text-sm text-slate-300">
           <span>
             รอบที่ <span className="font-bold text-white">{roundIndex + 1}</span> / {TOTAL_ROUNDS}
@@ -118,19 +118,16 @@ export default function SymbolAdditionApp() {
           <p className="text-xs text-slate-400 mb-2">
             ตารางสัญลักษณ์แทนตัวเลข (จำไว้ให้แม่น จะใช้ตลอดการทดสอบ)
           </p>
-          <div className="grid grid-cols-10 gap-2">
+          <div className="flex w-full">
             {legend.map((e) => (
-              <div
-                key={e.symbol}
-                className="aspect-square flex items-center justify-center text-xl sm:text-2xl bg-slate-900/60 rounded-lg"
-              >
+              <div key={e.symbol} className="flex-1 text-center text-2xl sm:text-3xl">
                 {e.symbol}
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-10 gap-2 mt-1">
+          <div className="flex w-full mt-2">
             {legend.map((e) => (
-              <div key={e.symbol} className="text-center text-sm text-sky-400 font-semibold">
+              <div key={e.symbol} className="flex-1 text-center text-sm sm:text-base text-sky-400 font-semibold">
                 {e.value}
               </div>
             ))}
@@ -156,19 +153,21 @@ export default function SymbolAdditionApp() {
             </p>
           )}
 
-          <div className="rounded-xl bg-slate-900/50 border border-slate-700 p-2 space-y-1">
-            {[0, halfLength].map((start) => (
-              <div
-                key={start}
-                className="grid grid-cols-8 sm:grid-cols-[repeat(16,minmax(0,1fr))] gap-1"
-              >
-                {currentRound.symbols.slice(start, start + halfLength).map((s, i) => (
-                  <div key={start + i} className="text-lg sm:text-2xl font-bold text-center py-2">
-                    {s}
-                  </div>
-                ))}
-              </div>
-            ))}
+          <div className="rounded-xl bg-slate-900/50 border border-slate-700 p-4">
+            <div className="flex justify-center gap-8 sm:gap-16">
+              {[0, halfLength].map((start) => (
+                <div key={start} className="flex flex-col divide-y divide-slate-700/40">
+                  {currentRound.symbols.slice(start, start + halfLength).map((s, i) => (
+                    <div key={start + i} className="w-14 sm:w-16 text-2xl sm:text-3xl font-bold text-center py-2">
+                      {s}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+            <p className="text-center text-xs text-slate-500 mt-3">
+              บวกแถวซ้ายให้ครบก่อน แล้วค่อยบวกต่อที่แถวขวา
+            </p>
           </div>
 
           {phase === "answer" && (
