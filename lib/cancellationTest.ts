@@ -95,7 +95,6 @@ const COLORS = {
   yellow: "#eab308",
   orange: "#f97316",
   blue: "#0ea5e9",
-  green: "#16a34a",
 };
 
 function buildColorPool(kinds: ShapeKind[], colors: { name: string; hex: string }[]): Shape[] {
@@ -111,9 +110,6 @@ export const SQUARE_TRIANGLE_SHAPES: Shape[] = buildColorPool(
   [
     { name: "red", hex: COLORS.red },
     { name: "yellow", hex: COLORS.yellow },
-    { name: "orange", hex: COLORS.orange },
-    { name: "blue", hex: COLORS.blue },
-    { name: "green", hex: COLORS.green },
   ]
 );
 
@@ -126,9 +122,6 @@ export const STAR_CIRCLE_SHAPES: Shape[] = buildColorPool(
   [
     { name: "orange", hex: COLORS.orange },
     { name: "blue", hex: COLORS.blue },
-    { name: "red", hex: COLORS.red },
-    { name: "yellow", hex: COLORS.yellow },
-    { name: "green", hex: COLORS.green },
   ]
 );
 
