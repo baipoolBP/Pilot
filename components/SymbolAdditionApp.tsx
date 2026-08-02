@@ -96,6 +96,7 @@ export default function SymbolAdditionApp() {
 
   if (!currentRound) return null;
 
+  const halfLength = Math.ceil(currentRound.symbols.length / 2);
   const pct = (timeLeft / ROUND_TIME) * 100;
   const timerColor =
     timeLeft <= 8 ? "bg-red-500" : timeLeft <= 15 ? "bg-yellow-400" : "bg-emerald-500";
@@ -117,26 +118,22 @@ export default function SymbolAdditionApp() {
           <p className="text-xs text-slate-400 mb-2">
             ตารางสัญลักษณ์แทนตัวเลข (จำไว้ให้แม่น จะใช้ตลอดการทดสอบ)
           </p>
-          <div className="overflow-x-auto">
-            <div className="inline-flex flex-col gap-1 min-w-full">
-              <div className="flex gap-2">
-                {legend.map((e) => (
-                  <div
-                    key={e.symbol}
-                    className="w-11 h-11 flex items-center justify-center text-2xl bg-slate-900/60 rounded-lg"
-                  >
-                    {e.symbol}
-                  </div>
-                ))}
+          <div className="grid grid-cols-10 gap-2">
+            {legend.map((e) => (
+              <div
+                key={e.symbol}
+                className="aspect-square flex items-center justify-center text-xl sm:text-2xl bg-slate-900/60 rounded-lg"
+              >
+                {e.symbol}
               </div>
-              <div className="flex gap-2">
-                {legend.map((e) => (
-                  <div key={e.symbol} className="w-11 text-center text-sm text-sky-400 font-semibold">
-                    {e.value}
-                  </div>
-                ))}
+            ))}
+          </div>
+          <div className="grid grid-cols-10 gap-2 mt-1">
+            {legend.map((e) => (
+              <div key={e.symbol} className="text-center text-sm text-sky-400 font-semibold">
+                {e.value}
               </div>
-            </div>
+            ))}
           </div>
         </div>
 
@@ -159,13 +156,17 @@ export default function SymbolAdditionApp() {
             </p>
           )}
 
-          <div className="max-h-[45vh] overflow-y-auto rounded-xl bg-slate-900/50 border border-slate-700">
-            {currentRound.symbols.map((s, i) => (
+          <div className="rounded-xl bg-slate-900/50 border border-slate-700 p-2 space-y-1">
+            {[0, halfLength].map((start) => (
               <div
-                key={i}
-                className="text-3xl font-bold text-center py-3 border-b border-slate-700/40 last:border-b-0"
+                key={start}
+                className="grid grid-cols-8 sm:grid-cols-[repeat(16,minmax(0,1fr))] gap-1"
               >
-                {s}
+                {currentRound.symbols.slice(start, start + halfLength).map((s, i) => (
+                  <div key={start + i} className="text-lg sm:text-2xl font-bold text-center py-2">
+                    {s}
+                  </div>
+                ))}
               </div>
             ))}
           </div>
