@@ -1,26 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  generateGrid,
-  gradeGrid,
-  TARGET_SHAPES,
-  ROWS,
-  TOTAL_TIME,
-  Cell,
-} from "@/lib/cancellationTest";
+import { generateGrid, gradeGrid, ROWS, TOTAL_TIME, Cell, Shape } from "@/lib/cancellationTest";
 import ShapeIcon from "@/components/ShapeIcon";
 
 type Phase = "start" | "running" | "result";
 
-export default function CancellationTestApp() {
+export interface CancellationConfig {
+  title: string;
+  subtitle: string;
+  shapePool: Shape[];
+  targetIds: string[];
+}
+
+export default function CancellationTestApp({ config }: { config: CancellationConfig }) {
+  const targetShapes = config.shapePool.filter((s) => config.targetIds.includes(s.id));
+
   const [phase, setPhase] = useState<Phase>("start");
   const [grid, setGrid] = useState<Cell[][]>([]);
   const [marked, setMarked] = useState<Set<string>>(new Set());
   const [timeLeft, setTimeLeft] = useState(TOTAL_TIME);
 
   function startTest() {
-    setGrid(generateGrid());
+    setGrid(generateGrid(config.shapePool, config.targetIds));
     setMarked(new Set());
     setPhase("running");
   }
@@ -54,7 +56,7 @@ export default function CancellationTestApp() {
   }
 
   if (phase === "start") {
-    return <StartScreen onStart={startTest} />;
+    return <StartScreen config={config} targetShapes={targetShapes} onStart={startTest} />;
   }
 
   if (phase === "result") {
@@ -69,7 +71,7 @@ export default function CancellationTestApp() {
     <div className="min-h-screen flex flex-col items-center px-4 py-4">
       <div className="w-full max-w-5xl">
         <div className="flex items-center justify-between mb-2 text-sm text-slate-300">
-          <span>ติ๊กสัญลักษณ์เป้าหมาย — {ROWS} แถว</span>
+          <span>{config.title} — {ROWS} แถว</span>
           <button
             type="button"
             onClick={() => setPhase("result")}
@@ -83,8 +85,8 @@ export default function CancellationTestApp() {
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <p className="text-sm text-slate-700 flex items-center whitespace-nowrap">
               ติ๊กเฉพาะสัญลักษณ์นี้:
-              {TARGET_SHAPES.map((s) => (
-                <ShapeIcon key={s.id} kind={s.kind} filled={s.filled} className="w-7 h-7 mx-1.5" />
+              {targetShapes.map((s) => (
+                <ShapeIcon key={s.id} kind={s.kind} filled={s.filled} color={s.color} className="w-7 h-7 mx-1.5" />
               ))}
               เท่านั้น
             </p>
@@ -119,7 +121,12 @@ export default function CancellationTestApp() {
                         isMarked ? "bg-indigo-100" : "hover:bg-slate-100"
                       }`}
                     >
-                      <ShapeIcon kind={cell.shape.kind} filled={cell.shape.filled} className="w-6 h-6" />
+                      <ShapeIcon
+                        kind={cell.shape.kind}
+                        filled={cell.shape.filled}
+                        color={cell.shape.color}
+                        className="w-6 h-6"
+                      />
                       {isMarked && (
                         <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
                           <span className="w-full h-[2.5px] bg-indigo-600 rotate-45" />
@@ -141,18 +148,32 @@ export default function CancellationTestApp() {
   );
 }
 
-function StartScreen({ onStart }: { onStart: () => void }) {
+function StartScreen({
+  config,
+  targetShapes,
+  onStart,
+}: {
+  config: CancellationConfig;
+  targetShapes: Shape[];
+  onStart: () => void;
+}) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-xl bg-slate-800/70 border border-slate-700 rounded-2xl p-8 shadow-xl text-center">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-2">ติ๊กสัญลักษณ์เป้าหมาย</h1>
-        <p className="text-slate-300 mb-6">ฝึกสมาธิและความไวในการสังเกต เตรียมสอบนักบิน กองทัพเรือ</p>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2">{config.title}</h1>
+        <p className="text-slate-300 mb-6">{config.subtitle}</p>
 
         <ul className="text-left text-sm text-slate-300 space-y-2 mb-8 bg-slate-900/50 rounded-xl p-5">
           <li className="flex items-center gap-2">
             <span>• ติ๊กเฉพาะสัญลักษณ์</span>
-            {TARGET_SHAPES.map((s) => (
-              <ShapeIcon key={s.id} kind={s.kind} filled={s.filled} className="w-5 h-5 text-sky-300" />
+            {targetShapes.map((s) => (
+              <ShapeIcon
+                key={s.id}
+                kind={s.kind}
+                filled={s.filled}
+                color={s.color}
+                className={`w-5 h-5 ${s.color ? "" : "text-sky-300"}`}
+              />
             ))}
             <span>เท่านั้น ที่ปรากฏอยู่ในตาราง</span>
           </li>
@@ -254,7 +275,12 @@ function ResultScreen({
                       key={c}
                       className={`relative w-9 h-9 shrink-0 flex items-center justify-center rounded ${cellBg}`}
                     >
-                      <ShapeIcon kind={cell.shape.kind} filled={cell.shape.filled} className="w-6 h-6" />
+                      <ShapeIcon
+                        kind={cell.shape.kind}
+                        filled={cell.shape.filled}
+                        color={cell.shape.color}
+                        className="w-6 h-6"
+                      />
                       {slashColor && (
                         <span className="absolute inset-0 flex items-center justify-center">
                           <span className={`w-full h-[2.5px] ${slashColor} rotate-45`} />
