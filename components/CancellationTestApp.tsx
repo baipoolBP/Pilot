@@ -9,6 +9,7 @@ import {
   TOTAL_TIME,
   Cell,
 } from "@/lib/cancellationTest";
+import ShapeIcon from "@/components/ShapeIcon";
 
 type Phase = "start" | "running" | "result";
 
@@ -78,36 +79,34 @@ export default function CancellationTestApp() {
           </button>
         </div>
 
-        <div className="sticky top-14 z-10 bg-slate-800/95 backdrop-blur border border-slate-700 rounded-2xl p-3 mb-3 shadow-xl">
+        <div className="sticky top-14 z-10 bg-white/95 backdrop-blur text-slate-800 border border-slate-300 rounded-2xl p-3 mb-3 shadow-xl">
           <div className="flex items-center justify-between gap-4 flex-wrap">
-            <p className="text-sm text-slate-300 whitespace-nowrap">
+            <p className="text-sm text-slate-700 flex items-center whitespace-nowrap">
               ติ๊กเฉพาะสัญลักษณ์นี้:
               {TARGET_SHAPES.map((s) => (
-                <span key={s.id} className="text-2xl mx-1.5 align-middle">
-                  {s.char}
-                </span>
+                <ShapeIcon key={s.id} kind={s.kind} filled={s.filled} className="w-7 h-7 mx-1.5" />
               ))}
               เท่านั้น
             </p>
             <div className="flex-1 min-w-[160px]">
-              <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
                 <div
                   className={`h-full ${timerColor} transition-[width] duration-100 ease-linear`}
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <p className="text-center text-xs text-slate-400 mt-1">
+              <p className="text-center text-xs text-slate-500 mt-1">
                 เหลือเวลา {Math.ceil(timeLeft)} วินาที
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-slate-800/70 border border-slate-700 rounded-2xl p-4 shadow-xl overflow-x-auto">
+        <div className="bg-white text-slate-800 border border-slate-300 rounded-2xl p-4 shadow-xl overflow-x-auto">
           <div className="flex flex-col gap-1 min-w-max">
             {grid.map((row, r) => (
               <div key={r} className="flex items-center gap-1">
-                <span className="w-7 text-right text-xs text-slate-500 mr-1 shrink-0">{r + 1}.</span>
+                <span className="w-7 text-right text-xs text-slate-400 mr-1 shrink-0">{r + 1}.</span>
                 {row.map((cell, c) => {
                   const key = `${r}-${c}`;
                   const isMarked = marked.has(key);
@@ -116,13 +115,16 @@ export default function CancellationTestApp() {
                       key={c}
                       type="button"
                       onClick={() => toggleMark(r, c)}
-                      className={`w-8 h-8 shrink-0 flex items-center justify-center text-xl rounded transition-colors ${
-                        isMarked
-                          ? "bg-sky-600/50 text-sky-300 line-through"
-                          : "hover:bg-slate-700/50"
+                      className={`relative w-9 h-9 shrink-0 flex items-center justify-center rounded transition-colors ${
+                        isMarked ? "bg-indigo-100" : "hover:bg-slate-100"
                       }`}
                     >
-                      {cell.shape.char}
+                      <ShapeIcon kind={cell.shape.kind} filled={cell.shape.filled} className="w-6 h-6" />
+                      {isMarked && (
+                        <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <span className="w-full h-[2.5px] bg-indigo-600 rotate-45" />
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -147,12 +149,12 @@ function StartScreen({ onStart }: { onStart: () => void }) {
         <p className="text-slate-300 mb-6">ฝึกสมาธิและความไวในการสังเกต เตรียมสอบนักบิน กองทัพเรือ</p>
 
         <ul className="text-left text-sm text-slate-300 space-y-2 mb-8 bg-slate-900/50 rounded-xl p-5">
-          <li>
-            • ติ๊กเฉพาะสัญลักษณ์{" "}
-            <b className="text-white">
-              ■ (สี่เหลี่ยมทึบ) และ △ (สามเหลี่ยมโปร่ง)
-            </b>{" "}
-            เท่านั้น ที่ปรากฏอยู่ในตาราง
+          <li className="flex items-center gap-2">
+            <span>• ติ๊กเฉพาะสัญลักษณ์</span>
+            {TARGET_SHAPES.map((s) => (
+              <ShapeIcon key={s.id} kind={s.kind} filled={s.filled} className="w-5 h-5 text-sky-300" />
+            ))}
+            <span>เท่านั้น ที่ปรากฏอยู่ในตาราง</span>
           </li>
           <li>
             • มีทั้งหมด <b className="text-white">{ROWS} แถว</b> ตำแหน่งสัญลักษณ์จะสุ่มใหม่ทุกครั้งที่เริ่มทำ
@@ -223,29 +225,41 @@ function ResultScreen({
           </button>
         </div>
 
-        <div className="bg-slate-800/70 border border-slate-700 rounded-2xl p-4 shadow-xl overflow-x-auto">
-          <p className="text-xs text-slate-400 mb-3">
-            ตรวจคำตอบ: <span className="text-emerald-400">เขียว = ติ๊กถูก</span>{" "}
-            <span className="text-rose-400">แดง = ติ๊กผิด</span>{" "}
-            <span className="text-amber-400">เหลือง = พลาดไม่ได้ติ๊ก</span>
+        <div className="bg-white text-slate-800 border border-slate-300 rounded-2xl p-4 shadow-xl overflow-x-auto">
+          <p className="text-xs text-slate-500 mb-3">
+            ตรวจคำตอบ: <span className="text-emerald-600 font-semibold">เขียว = ติ๊กถูก</span>{" "}
+            <span className="text-rose-600 font-semibold">แดง = ติ๊กผิด</span>{" "}
+            <span className="text-amber-600 font-semibold">เหลือง = พลาดไม่ได้ติ๊ก</span>
           </p>
           <div className="flex flex-col gap-1 min-w-max">
             {grid.map((row, r) => (
               <div key={r} className="flex items-center gap-1">
-                <span className="w-7 text-right text-xs text-slate-500 mr-1 shrink-0">{r + 1}.</span>
+                <span className="w-7 text-right text-xs text-slate-400 mr-1 shrink-0">{r + 1}.</span>
                 {row.map((cell, c) => {
                   const key = `${r}-${c}`;
                   const isMarked = marked.has(key);
-                  let cls = "text-slate-500";
-                  if (cell.isTarget && isMarked) cls = "bg-emerald-600/40 text-emerald-300 line-through";
-                  else if (cell.isTarget && !isMarked) cls = "bg-amber-600/30 text-amber-300 ring-1 ring-amber-500";
-                  else if (!cell.isTarget && isMarked) cls = "bg-rose-600/40 text-rose-300 line-through";
+                  let cellBg = "";
+                  let slashColor = "";
+                  if (cell.isTarget && isMarked) {
+                    cellBg = "bg-emerald-100";
+                    slashColor = "bg-emerald-600";
+                  } else if (cell.isTarget && !isMarked) {
+                    cellBg = "bg-amber-100 ring-2 ring-amber-400";
+                  } else if (!cell.isTarget && isMarked) {
+                    cellBg = "bg-rose-100";
+                    slashColor = "bg-rose-600";
+                  }
                   return (
                     <span
                       key={c}
-                      className={`w-8 h-8 shrink-0 flex items-center justify-center text-xl rounded ${cls}`}
+                      className={`relative w-9 h-9 shrink-0 flex items-center justify-center rounded ${cellBg}`}
                     >
-                      {cell.shape.char}
+                      <ShapeIcon kind={cell.shape.kind} filled={cell.shape.filled} className="w-6 h-6" />
+                      {slashColor && (
+                        <span className="absolute inset-0 flex items-center justify-center">
+                          <span className={`w-full h-[2.5px] ${slashColor} rotate-45`} />
+                        </span>
+                      )}
                     </span>
                   );
                 })}

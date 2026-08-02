@@ -1,6 +1,9 @@
+export type ShapeKind = "square" | "triangle-up" | "triangle-down" | "circle" | "diamond" | "pentagon";
+
 export interface Shape {
   id: string;
-  char: string;
+  kind: ShapeKind;
+  filled: boolean;
 }
 
 export interface Cell {
@@ -12,18 +15,12 @@ export const ROWS = 20;
 export const SYMBOLS_PER_ROW = 16;
 export const TOTAL_TIME = 120; // seconds
 
-const SHAPES: Shape[] = [
-  { id: "square-filled", char: "■" },
-  { id: "square-outline", char: "□" },
-  { id: "triangle-up-filled", char: "▲" },
-  { id: "triangle-up-outline", char: "△" },
-  { id: "triangle-down-filled", char: "▼" },
-  { id: "triangle-down-outline", char: "▽" },
-  { id: "circle-filled", char: "●" },
-  { id: "circle-outline", char: "○" },
-  { id: "diamond-filled", char: "◆" },
-  { id: "diamond-outline", char: "◇" },
-];
+const KINDS: ShapeKind[] = ["square", "triangle-up", "triangle-down", "circle", "diamond", "pentagon"];
+
+const SHAPES: Shape[] = KINDS.flatMap((kind) => [
+  { id: `${kind}-filled`, kind, filled: true },
+  { id: `${kind}-outline`, kind, filled: false },
+]);
 
 const TARGET_IDS = ["square-filled", "triangle-up-outline"];
 
