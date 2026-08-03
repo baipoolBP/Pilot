@@ -26,7 +26,7 @@ export interface Cell {
 
 export const ROWS = 20;
 export const SYMBOLS_PER_ROW = 16;
-export const TOTAL_TIME = 120; // seconds
+export const TOTAL_TIME = 45; // seconds
 
 export interface GradeResult {
   totalTargets: number;
