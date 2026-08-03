@@ -44,7 +44,7 @@ export interface FormQuestion {
 }
 
 export const TOTAL_QUESTIONS = 60;
-export const ROWS_PER_PAGE = 20;
+export const ROWS_PER_PAGE = 10;
 export const PAGE_COUNT = TOTAL_QUESTIONS / ROWS_PER_PAGE;
 export const TOTAL_TIME = 120; // seconds, shared across all pages
 

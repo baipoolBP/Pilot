@@ -75,14 +75,12 @@ export default function FormPerceptionApp() {
   }
 
   const pageQuestions = questions.slice(pageIndex * ROWS_PER_PAGE, pageIndex * ROWS_PER_PAGE + ROWS_PER_PAGE);
-  const leftCol = pageQuestions.slice(0, 10);
-  const rightCol = pageQuestions.slice(10, 20);
   const pct = (timeLeft / TOTAL_TIME) * 100;
   const timerColor = timeLeft <= 20 ? "bg-red-500" : timeLeft <= 45 ? "bg-yellow-400" : "bg-emerald-500";
 
   return (
     <div className="min-h-screen flex flex-col items-center px-4 py-4">
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-2xl">
         <div className="flex items-center justify-between mb-2 text-sm text-slate-300">
           <span>
             หารูปที่เหมือน — หน้า {pageIndex + 1} / {PAGE_COUNT}
@@ -114,25 +112,21 @@ export default function FormPerceptionApp() {
         </div>
 
         <div className="bg-white text-slate-800 border border-slate-300 rounded-2xl p-4 shadow-xl overflow-x-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-            {[leftCol, rightCol].map((col, colIdx) => (
-              <div key={colIdx} className="flex flex-col divide-y divide-slate-100">
-                {col.map((q, i) => {
-                  const globalIndex = pageIndex * ROWS_PER_PAGE + colIdx * 10 + i;
-                  return (
-                    <QuestionRow
-                      key={globalIndex}
-                      globalIndex={globalIndex}
-                      question={q}
-                      answer={answers[globalIndex]}
-                      interactive
-                      onToggleCandidate={(ci) => toggleCandidate(globalIndex, ci)}
-                      onToggleNo={() => toggleNo(globalIndex)}
-                    />
-                  );
-                })}
-              </div>
-            ))}
+          <div className="flex flex-col divide-y divide-slate-100">
+            {pageQuestions.map((q, i) => {
+              const globalIndex = pageIndex * ROWS_PER_PAGE + i;
+              return (
+                <QuestionRow
+                  key={globalIndex}
+                  globalIndex={globalIndex}
+                  question={q}
+                  answer={answers[globalIndex]}
+                  interactive
+                  onToggleCandidate={(ci) => toggleCandidate(globalIndex, ci)}
+                  onToggleNo={() => toggleNo(globalIndex)}
+                />
+              );
+            })}
           </div>
         </div>
 
@@ -179,19 +173,20 @@ function QuestionRow({
   const rowIsCorrect = !interactive ? isRowCorrect(question, answer) : null;
 
   return (
-    <div className="flex items-center gap-1 py-1">
-      <span className="w-7 text-right text-[10px] text-slate-400 shrink-0">{globalIndex + 1}.</span>
-      <div className="flex items-center gap-0.5 mr-1.5 shrink-0">
+    <div className="flex items-center gap-1 py-1.5">
+      <span className="w-8 text-right text-xs text-slate-400 shrink-0">{globalIndex + 1}.</span>
+      <div className="flex items-center gap-1.5 shrink-0">
         {question.keys.map((k, i) => (
           <span
             key={i}
-            className="w-8 h-8 flex items-center justify-center border border-slate-400 rounded bg-slate-50 shrink-0"
+            className="w-11 h-11 flex items-center justify-center border border-slate-400 rounded-lg bg-slate-50 shrink-0"
           >
-            <LineSymbolIcon symbol={k} className="w-5 h-5 text-slate-700" />
+            <LineSymbolIcon symbol={k} className="w-7 h-7 text-slate-700" />
           </span>
         ))}
       </div>
-      <div className="flex items-center gap-0.5">
+      <span className="w-px h-9 bg-slate-300 mx-4 shrink-0" aria-hidden="true" />
+      <div className="flex items-center gap-1.5">
         {question.candidates.map((c, i) => {
           const isSelected = selected.has(i);
           const isCorrect = correctSet.has(i);
@@ -210,9 +205,9 @@ function QuestionRow({
               type="button"
               disabled={!interactive}
               onClick={() => onToggleCandidate?.(i)}
-              className={`relative w-8 h-8 shrink-0 flex items-center justify-center border rounded transition-colors ${cellClass}`}
+              className={`relative w-11 h-11 shrink-0 flex items-center justify-center border rounded-lg transition-colors ${cellClass}`}
             >
-              <LineSymbolIcon symbol={c} className="w-5 h-5 text-slate-700" />
+              <LineSymbolIcon symbol={c} className="w-7 h-7 text-slate-700" />
             </button>
           );
         })}
@@ -220,7 +215,7 @@ function QuestionRow({
           type="button"
           disabled={!interactive}
           onClick={() => onToggleNo?.()}
-          className={`w-8 h-8 shrink-0 flex items-center justify-center border rounded text-[10px] font-bold transition-colors ${
+          className={`w-12 h-11 shrink-0 flex items-center justify-center border rounded-lg text-xs font-bold transition-colors ${
             !interactive
               ? question.correctIndices.length === 0 && no
                 ? "border-emerald-500 bg-emerald-100 text-emerald-700"
@@ -238,7 +233,7 @@ function QuestionRow({
         </button>
       </div>
       {!interactive && (
-        <span className={`ml-2 text-xs font-semibold shrink-0 ${rowIsCorrect ? "text-emerald-600" : "text-rose-600"}`}>
+        <span className={`ml-2 text-sm font-semibold shrink-0 ${rowIsCorrect ? "text-emerald-600" : "text-rose-600"}`}>
           {rowIsCorrect ? "✓" : "✗"}
         </span>
       )}
@@ -302,7 +297,7 @@ function ResultScreen({
 
   return (
     <div className="min-h-screen flex flex-col items-center px-4 py-10">
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-2xl">
         <div className="bg-slate-800/70 border border-slate-700 rounded-2xl p-8 shadow-xl mb-6 text-center">
           <h2 className="text-xl font-semibold text-slate-300 mb-1">สรุปผลการทดสอบ</h2>
           <p className="text-5xl font-extrabold my-3">
@@ -326,36 +321,28 @@ function ResultScreen({
           <span className="text-amber-600 font-semibold">เหลือง = พลาดไม่ได้ติ๊ก</span>
         </p>
 
-        {pages.map((pageQuestions, p) => {
-          const leftCol = pageQuestions.slice(0, 10);
-          const rightCol = pageQuestions.slice(10, 20);
-          return (
-            <div
-              key={p}
-              className="bg-white text-slate-800 border border-slate-300 rounded-2xl p-4 shadow-xl overflow-x-auto mb-4"
-            >
-              <p className="text-sm font-semibold text-slate-600 mb-2">หน้า {p + 1}</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                {[leftCol, rightCol].map((col, colIdx) => (
-                  <div key={colIdx} className="flex flex-col divide-y divide-slate-100">
-                    {col.map((q, i) => {
-                      const globalIndex = p * ROWS_PER_PAGE + colIdx * 10 + i;
-                      return (
-                        <QuestionRow
-                          key={globalIndex}
-                          globalIndex={globalIndex}
-                          question={q}
-                          answer={answers[globalIndex]}
-                          interactive={false}
-                        />
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
+        {pages.map((pageQuestions, p) => (
+          <div
+            key={p}
+            className="bg-white text-slate-800 border border-slate-300 rounded-2xl p-4 shadow-xl overflow-x-auto mb-4"
+          >
+            <p className="text-sm font-semibold text-slate-600 mb-2">หน้า {p + 1}</p>
+            <div className="flex flex-col divide-y divide-slate-100">
+              {pageQuestions.map((q, i) => {
+                const globalIndex = p * ROWS_PER_PAGE + i;
+                return (
+                  <QuestionRow
+                    key={globalIndex}
+                    globalIndex={globalIndex}
+                    question={q}
+                    answer={answers[globalIndex]}
+                    interactive={false}
+                  />
+                );
+              })}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
     </div>
   );
