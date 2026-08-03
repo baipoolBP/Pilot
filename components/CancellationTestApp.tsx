@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { generateGrid, gradeGrid, ROWS, TOTAL_TIME, Cell, Shape } from "@/lib/cancellationTest";
+import { generateGrid, gradeGrids, ROWS, SYMBOLS_PER_ROW, TOTAL_TIME, Cell, Shape } from "@/lib/cancellationTest";
 import ShapeIcon from "@/components/ShapeIcon";
 
 type Phase = "start" | "running" | "result";
@@ -11,26 +11,41 @@ export interface CancellationConfig {
   subtitle: string;
   shapePool: Shape[];
   targetIds: string[];
+  rows?: number;
+  cols?: number;
+  totalTime?: number;
+  // Number of grid pages the test is split into. The countdown runs continuously
+  // across all pages; the user advances pages manually with a "next page" button.
+  pages?: number;
 }
 
 export default function CancellationTestApp({ config }: { config: CancellationConfig }) {
+  const rows = config.rows ?? ROWS;
+  const cols = config.cols ?? SYMBOLS_PER_ROW;
+  const totalTime = config.totalTime ?? TOTAL_TIME;
+  const pageCount = config.pages ?? 1;
+
   const targetShapes = config.shapePool.filter((s) => config.targetIds.includes(s.id));
 
   const [phase, setPhase] = useState<Phase>("start");
-  const [grid, setGrid] = useState<Cell[][]>([]);
+  const [grids, setGrids] = useState<Cell[][][]>([]);
+  const [pageIndex, setPageIndex] = useState(0);
   const [marked, setMarked] = useState<Set<string>>(new Set());
-  const [timeLeft, setTimeLeft] = useState(TOTAL_TIME);
+  const [timeLeft, setTimeLeft] = useState(totalTime);
 
   function startTest() {
-    setGrid(generateGrid(config.shapePool, config.targetIds));
+    setGrids(
+      Array.from({ length: pageCount }, () => generateGrid(config.shapePool, config.targetIds, rows, cols))
+    );
     setMarked(new Set());
+    setPageIndex(0);
     setPhase("running");
   }
 
   useEffect(() => {
     if (phase !== "running") return;
-    const deadline = Date.now() + TOTAL_TIME * 1000;
-    setTimeLeft(TOTAL_TIME);
+    const deadline = Date.now() + totalTime * 1000;
+    setTimeLeft(totalTime);
 
     const interval = setInterval(() => {
       const remain = Math.max(0, (deadline - Date.now()) / 1000);
@@ -42,11 +57,12 @@ export default function CancellationTestApp({ config }: { config: CancellationCo
     }, 100);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
   function toggleMark(r: number, c: number) {
     if (phase !== "running") return;
-    const key = `${r}-${c}`;
+    const key = `${pageIndex}-${r}-${c}`;
     setMarked((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
@@ -56,14 +72,24 @@ export default function CancellationTestApp({ config }: { config: CancellationCo
   }
 
   if (phase === "start") {
-    return <StartScreen config={config} targetShapes={targetShapes} onStart={startTest} />;
+    return (
+      <StartScreen
+        config={config}
+        targetShapes={targetShapes}
+        rows={rows}
+        totalTime={totalTime}
+        pageCount={pageCount}
+        onStart={startTest}
+      />
+    );
   }
 
   if (phase === "result") {
-    return <ResultScreen grid={grid} marked={marked} onRestart={startTest} />;
+    return <ResultScreen grids={grids} marked={marked} onRestart={startTest} />;
   }
 
-  const pct = (timeLeft / TOTAL_TIME) * 100;
+  const grid = grids[pageIndex];
+  const pct = (timeLeft / totalTime) * 100;
   const timerColor =
     timeLeft <= 20 ? "bg-red-500" : timeLeft <= 45 ? "bg-yellow-400" : "bg-emerald-500";
 
@@ -71,7 +97,15 @@ export default function CancellationTestApp({ config }: { config: CancellationCo
     <div className="min-h-screen flex flex-col items-center px-4 py-4">
       <div className="w-full max-w-5xl">
         <div className="flex items-center justify-between mb-2 text-sm text-slate-300">
-          <span>{config.title} — {ROWS} แถว</span>
+          <span>
+            {config.title} — {rows} แถว
+            {pageCount > 1 && (
+              <>
+                {" "}
+                — หน้า {pageIndex + 1} / {pageCount}
+              </>
+            )}
+          </span>
           <button
             type="button"
             onClick={() => setPhase("result")}
@@ -110,7 +144,7 @@ export default function CancellationTestApp({ config }: { config: CancellationCo
               <div key={r} className="flex items-center gap-1">
                 <span className="w-7 text-right text-xs text-slate-400 mr-1 shrink-0">{r + 1}.</span>
                 {row.map((cell, c) => {
-                  const key = `${r}-${c}`;
+                  const key = `${pageIndex}-${r}-${c}`;
                   const isMarked = marked.has(key);
                   return (
                     <button
@@ -141,6 +175,22 @@ export default function CancellationTestApp({ config }: { config: CancellationCo
           </div>
         </div>
 
+        {pageCount > 1 && (
+          <div className="flex justify-center mt-4">
+            {pageIndex < pageCount - 1 ? (
+              <button
+                type="button"
+                onClick={() => setPageIndex((p) => p + 1)}
+                className="bg-sky-600 hover:bg-sky-500 transition-colors rounded-xl px-6 py-3 font-semibold"
+              >
+                ไปหน้าถัดไป ({pageIndex + 2}/{pageCount}) →
+              </button>
+            ) : (
+              <p className="text-xs text-slate-500">หน้าสุดท้ายแล้ว — กด &quot;ส่งคำตอบ&quot; เมื่อทำเสร็จ</p>
+            )}
+          </div>
+        )}
+
         <p className="text-center text-xs text-slate-500 mt-4">
           คลิกสัญลักษณ์เพื่อติ๊ก/ยกเลิกติ๊ก — หมดเวลาหรือกดส่งคำตอบแล้วระบบจะตรวจให้ทันที
         </p>
@@ -152,10 +202,16 @@ export default function CancellationTestApp({ config }: { config: CancellationCo
 function StartScreen({
   config,
   targetShapes,
+  rows,
+  totalTime,
+  pageCount,
   onStart,
 }: {
   config: CancellationConfig;
   targetShapes: Shape[];
+  rows: number;
+  totalTime: number;
+  pageCount: number;
   onStart: () => void;
 }) {
   return (
@@ -180,10 +236,18 @@ function StartScreen({
             <span>เท่านั้น ที่ปรากฏอยู่ในตาราง</span>
           </li>
           <li>
-            • มีทั้งหมด <b className="text-white">{ROWS} แถว</b> ตำแหน่งสัญลักษณ์จะสุ่มใหม่ทุกครั้งที่เริ่มทำ
+            • มีทั้งหมด <b className="text-white">{rows} แถว</b>
+            {pageCount > 1 && (
+              <>
+                {" "}
+                × <b className="text-white">{pageCount} หน้า</b> (กด &quot;ไปหน้าถัดไป&quot; เองเมื่อทำหน้าปัจจุบันเสร็จ)
+              </>
+            )}{" "}
+            ตำแหน่งสัญลักษณ์จะสุ่มใหม่ทุกครั้งที่เริ่มทำ
           </li>
           <li>
-            • จับเวลารวม <b className="text-white">{TOTAL_TIME} วินาที</b> ทำให้เร็วและแม่นที่สุด
+            • จับเวลารวม <b className="text-white">{totalTime} วินาที</b>
+            {pageCount > 1 ? " สำหรับทุกหน้ารวมกัน" : ""} ทำให้เร็วและแม่นที่สุด
           </li>
           <li>• เมื่อหมดเวลาหรือกด &quot;ส่งคำตอบ&quot; ระบบจะตรวจว่าติ๊กถูก ติ๊กผิด หรือพลาดไม่ได้ติ๊กข้อไหนบ้าง</li>
         </ul>
@@ -200,15 +264,15 @@ function StartScreen({
 }
 
 function ResultScreen({
-  grid,
+  grids,
   marked,
   onRestart,
 }: {
-  grid: Cell[][];
+  grids: Cell[][][];
   marked: Set<string>;
   onRestart: () => void;
 }) {
-  const result = gradeGrid(grid, marked);
+  const result = gradeGrids(grids, marked);
   const netScore = Math.max(0, result.hits - result.falsePositives);
 
   return (
@@ -248,54 +312,58 @@ function ResultScreen({
           </button>
         </div>
 
-        <div className="bg-white text-slate-800 border border-slate-300 rounded-2xl p-4 shadow-xl overflow-x-auto">
-          <p className="text-xs text-slate-500 mb-3">
-            ตรวจคำตอบ: <span className="text-emerald-600 font-semibold">เขียว = ติ๊กถูก</span>{" "}
-            <span className="text-rose-600 font-semibold">แดง = ติ๊กผิด</span>{" "}
-            <span className="text-amber-600 font-semibold">เหลือง = พลาดไม่ได้ติ๊ก</span>
-          </p>
-          <div className="flex flex-col gap-1 min-w-max">
-            {grid.map((row, r) => (
-              <div key={r} className="flex items-center gap-1">
-                <span className="w-7 text-right text-xs text-slate-400 mr-1 shrink-0">{r + 1}.</span>
-                {row.map((cell, c) => {
-                  const key = `${r}-${c}`;
-                  const isMarked = marked.has(key);
-                  let cellBg = "";
-                  let slashColor = "";
-                  if (cell.isTarget && isMarked) {
-                    cellBg = "bg-emerald-100";
-                    slashColor = "bg-emerald-600";
-                  } else if (cell.isTarget && !isMarked) {
-                    cellBg = "bg-amber-100 ring-2 ring-amber-400";
-                  } else if (!cell.isTarget && isMarked) {
-                    cellBg = "bg-rose-100";
-                    slashColor = "bg-rose-600";
-                  }
-                  return (
-                    <span
-                      key={c}
-                      className={`relative w-9 h-9 shrink-0 flex items-center justify-center rounded ${cellBg}`}
-                    >
-                      <ShapeIcon
-                        kind={cell.shape.kind}
-                        filled={cell.shape.filled}
-                        color={cell.shape.color}
-                        digit={cell.shape.digit}
-                        className="w-6 h-6"
-                      />
-                      {slashColor && (
-                        <span className="absolute inset-0 flex items-center justify-center">
-                          <span className={`w-full h-[2.5px] ${slashColor} rotate-45`} />
-                        </span>
-                      )}
-                    </span>
-                  );
-                })}
-              </div>
-            ))}
+        <p className="text-xs text-slate-500 mb-3">
+          ตรวจคำตอบ: <span className="text-emerald-600 font-semibold">เขียว = ติ๊กถูก</span>{" "}
+          <span className="text-rose-600 font-semibold">แดง = ติ๊กผิด</span>{" "}
+          <span className="text-amber-600 font-semibold">เหลือง = พลาดไม่ได้ติ๊ก</span>
+        </p>
+
+        {grids.map((grid, p) => (
+          <div key={p} className="bg-white text-slate-800 border border-slate-300 rounded-2xl p-4 shadow-xl overflow-x-auto mb-4">
+            {grids.length > 1 && <p className="text-sm font-semibold text-slate-600 mb-2">หน้า {p + 1}</p>}
+            <div className="flex flex-col gap-1 min-w-max">
+              {grid.map((row, r) => (
+                <div key={r} className="flex items-center gap-1">
+                  <span className="w-7 text-right text-xs text-slate-400 mr-1 shrink-0">{r + 1}.</span>
+                  {row.map((cell, c) => {
+                    const key = `${p}-${r}-${c}`;
+                    const isMarked = marked.has(key);
+                    let cellBg = "";
+                    let slashColor = "";
+                    if (cell.isTarget && isMarked) {
+                      cellBg = "bg-emerald-100";
+                      slashColor = "bg-emerald-600";
+                    } else if (cell.isTarget && !isMarked) {
+                      cellBg = "bg-amber-100 ring-2 ring-amber-400";
+                    } else if (!cell.isTarget && isMarked) {
+                      cellBg = "bg-rose-100";
+                      slashColor = "bg-rose-600";
+                    }
+                    return (
+                      <span
+                        key={c}
+                        className={`relative w-9 h-9 shrink-0 flex items-center justify-center rounded ${cellBg}`}
+                      >
+                        <ShapeIcon
+                          kind={cell.shape.kind}
+                          filled={cell.shape.filled}
+                          color={cell.shape.color}
+                          digit={cell.shape.digit}
+                          className="w-6 h-6"
+                        />
+                        {slashColor && (
+                          <span className="absolute inset-0 flex items-center justify-center">
+                            <span className={`w-full h-[2.5px] ${slashColor} rotate-45`} />
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );

@@ -11,6 +11,10 @@ export default function NumberCancellationPage() {
           subtitle: "ฝึกแยกแยะตัวเลขอย่างรวดเร็ว เตรียมสอบนักบิน กองทัพเรือ",
           shapePool: DIGIT_SHAPES,
           targetIds: DIGIT_TARGET_IDS,
+          rows: 28,
+          cols: 36,
+          totalTime: 120,
+          pages: 2,
         }}
       />
     </TestShell>

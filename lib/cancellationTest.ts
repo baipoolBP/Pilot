@@ -36,25 +36,29 @@ export interface GradeResult {
   correctRejections: number;
 }
 
-export function gradeGrid(grid: Cell[][], marked: Set<string>): GradeResult {
+// marked keys are `${page}-${row}-${col}` so a test can span multiple grid pages
+// sharing one mark set (single-page tests just always use page 0).
+export function gradeGrids(grids: Cell[][][], marked: Set<string>): GradeResult {
   let totalTargets = 0;
   let hits = 0;
   let misses = 0;
   let falsePositives = 0;
   let correctRejections = 0;
 
-  grid.forEach((row, r) => {
-    row.forEach((cell, c) => {
-      const isMarked = marked.has(`${r}-${c}`);
-      if (cell.isTarget) {
-        totalTargets++;
-        if (isMarked) hits++;
-        else misses++;
-      } else if (isMarked) {
-        falsePositives++;
-      } else {
-        correctRejections++;
-      }
+  grids.forEach((grid, p) => {
+    grid.forEach((row, r) => {
+      row.forEach((cell, c) => {
+        const isMarked = marked.has(`${p}-${r}-${c}`);
+        if (cell.isTarget) {
+          totalTargets++;
+          if (isMarked) hits++;
+          else misses++;
+        } else if (isMarked) {
+          falsePositives++;
+        } else {
+          correctRejections++;
+        }
+      });
     });
   });
 
