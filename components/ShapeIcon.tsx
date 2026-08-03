@@ -1,6 +1,6 @@
 import { ShapeKind } from "@/lib/cancellationTest";
 
-const PATHS: Record<Exclude<ShapeKind, "circle">, string> = {
+const PATHS: Record<Exclude<ShapeKind, "circle" | "digit">, string> = {
   square: "M4 4 H20 V20 H4 Z",
   "triangle-up": "M12 3 L21 20 L3 20 Z",
   "triangle-down": "M12 21 L3 4 L21 4 Z",
@@ -13,14 +13,35 @@ export default function ShapeIcon({
   kind,
   filled,
   color,
+  digit,
   className,
 }: {
   kind: ShapeKind;
   filled: boolean;
   /** Explicit hex color for the color-based test variants. Omit to inherit currentColor. */
   color?: string;
+  /** Only used when kind === "digit" — the number to render as text. */
+  digit?: number;
   className?: string;
 }) {
+  if (kind === "digit") {
+    return (
+      <svg viewBox="0 0 24 24" className={className}>
+        <text
+          x="12"
+          y="13"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize="17"
+          fontWeight="700"
+          fill={color ?? "currentColor"}
+        >
+          {digit}
+        </text>
+      </svg>
+    );
+  }
+
   const fill = color ?? (filled ? "currentColor" : "none");
 
   return (

@@ -86,7 +86,7 @@ export default function CancellationTestApp({ config }: { config: CancellationCo
             <p className="text-sm text-slate-700 flex items-center whitespace-nowrap">
               ติ๊กเฉพาะสัญลักษณ์นี้:
               {targetShapes.map((s) => (
-                <ShapeIcon key={s.id} kind={s.kind} filled={s.filled} color={s.color} className="w-7 h-7 mx-1.5" />
+                <ShapeIcon key={s.id} kind={s.kind} filled={s.filled} color={s.color} digit={s.digit} className="w-7 h-7 mx-1.5" />
               ))}
               เท่านั้น
             </p>
@@ -125,6 +125,7 @@ export default function CancellationTestApp({ config }: { config: CancellationCo
                         kind={cell.shape.kind}
                         filled={cell.shape.filled}
                         color={cell.shape.color}
+                        digit={cell.shape.digit}
                         className="w-6 h-6"
                       />
                       {isMarked && (
@@ -172,6 +173,7 @@ function StartScreen({
                 kind={s.kind}
                 filled={s.filled}
                 color={s.color}
+                digit={s.digit}
                 className={`w-5 h-5 ${s.color ? "" : "text-sky-300"}`}
               />
             ))}
@@ -279,6 +281,7 @@ function ResultScreen({
                         kind={cell.shape.kind}
                         filled={cell.shape.filled}
                         color={cell.shape.color}
+                        digit={cell.shape.digit}
                         className="w-6 h-6"
                       />
                       {slashColor && (

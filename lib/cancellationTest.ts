@@ -5,7 +5,8 @@ export type ShapeKind =
   | "circle"
   | "diamond"
   | "pentagon"
-  | "star";
+  | "star"
+  | "digit";
 
 export interface Shape {
   id: string;
@@ -14,6 +15,8 @@ export interface Shape {
   // Explicit color (hex) for the color-based variants. When omitted, ShapeIcon
   // falls back to currentColor so the monochrome panel controls the color.
   color?: string;
+  // Only set when kind === "digit" — the number ShapeIcon renders as text.
+  digit?: number;
 }
 
 export interface Cell {
@@ -126,3 +129,14 @@ export const STAR_CIRCLE_SHAPES: Shape[] = buildColorPool(
 );
 
 export const STAR_CIRCLE_TARGET_IDS = ["star-orange", "circle-blue"];
+
+// ---- Variant 4: find digit 6 among other single digits ----
+
+export const DIGIT_SHAPES: Shape[] = Array.from({ length: 10 }, (_, d) => ({
+  id: `digit-${d}`,
+  kind: "digit" as ShapeKind,
+  filled: true,
+  digit: d,
+}));
+
+export const DIGIT_TARGET_IDS = ["digit-6"];
