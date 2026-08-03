@@ -24,6 +24,9 @@ export default function CancellationTestApp({ config }: { config: CancellationCo
   const cols = config.cols ?? SYMBOLS_PER_ROW;
   const totalTime = config.totalTime ?? TOTAL_TIME;
   const pageCount = config.pages ?? 1;
+  // Wide grids (e.g. 36 columns) need smaller cells and a wider container so the
+  // whole row fits on screen without horizontal scrolling mid-test.
+  const compact = cols > 20;
 
   const targetShapes = config.shapePool.filter((s) => config.targetIds.includes(s.id));
 
@@ -85,7 +88,7 @@ export default function CancellationTestApp({ config }: { config: CancellationCo
   }
 
   if (phase === "result") {
-    return <ResultScreen grids={grids} marked={marked} onRestart={startTest} />;
+    return <ResultScreen grids={grids} marked={marked} compact={compact} onRestart={startTest} />;
   }
 
   const grid = grids[pageIndex];
@@ -95,7 +98,7 @@ export default function CancellationTestApp({ config }: { config: CancellationCo
 
   return (
     <div className="min-h-screen flex flex-col items-center px-4 py-4">
-      <div className="w-full max-w-5xl">
+      <div className={`w-full ${compact ? "max-w-7xl" : "max-w-5xl"}`}>
         <div className="flex items-center justify-between mb-2 text-sm text-slate-300">
           <span>
             {config.title} — {rows} แถว
@@ -139,10 +142,16 @@ export default function CancellationTestApp({ config }: { config: CancellationCo
         </div>
 
         <div className="bg-white text-slate-800 border border-slate-300 rounded-2xl p-4 shadow-xl overflow-x-auto">
-          <div className="flex flex-col gap-1 min-w-max">
+          <div className={`flex flex-col ${compact ? "gap-0.5" : "gap-1"} min-w-max`}>
             {grid.map((row, r) => (
-              <div key={r} className="flex items-center gap-1">
-                <span className="w-7 text-right text-xs text-slate-400 mr-1 shrink-0">{r + 1}.</span>
+              <div key={r} className={`flex items-center ${compact ? "gap-0.5" : "gap-1"}`}>
+                <span
+                  className={`text-right text-slate-400 mr-1 shrink-0 ${
+                    compact ? "w-6 text-[10px]" : "w-7 text-xs"
+                  }`}
+                >
+                  {r + 1}.
+                </span>
                 {row.map((cell, c) => {
                   const key = `${pageIndex}-${r}-${c}`;
                   const isMarked = marked.has(key);
@@ -151,16 +160,16 @@ export default function CancellationTestApp({ config }: { config: CancellationCo
                       key={c}
                       type="button"
                       onClick={() => toggleMark(r, c)}
-                      className={`relative w-9 h-9 shrink-0 flex items-center justify-center rounded transition-colors ${
-                        isMarked ? "bg-indigo-100" : "hover:bg-slate-100"
-                      }`}
+                      className={`relative shrink-0 flex items-center justify-center rounded transition-colors ${
+                        compact ? "w-7 h-7" : "w-9 h-9"
+                      } ${isMarked ? "bg-indigo-100" : "hover:bg-slate-100"}`}
                     >
                       <ShapeIcon
                         kind={cell.shape.kind}
                         filled={cell.shape.filled}
                         color={cell.shape.color}
                         digit={cell.shape.digit}
-                        className="w-6 h-6"
+                        className={compact ? "w-5 h-5" : "w-6 h-6"}
                       />
                       {isMarked && (
                         <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -266,10 +275,12 @@ function StartScreen({
 function ResultScreen({
   grids,
   marked,
+  compact,
   onRestart,
 }: {
   grids: Cell[][][];
   marked: Set<string>;
+  compact: boolean;
   onRestart: () => void;
 }) {
   const result = gradeGrids(grids, marked);
@@ -277,7 +288,7 @@ function ResultScreen({
 
   return (
     <div className="min-h-screen flex flex-col items-center px-4 py-10">
-      <div className="w-full max-w-5xl">
+      <div className={`w-full ${compact ? "max-w-7xl" : "max-w-5xl"}`}>
         <div className="bg-slate-800/70 border border-slate-700 rounded-2xl p-8 shadow-xl mb-6 text-center">
           <h2 className="text-xl font-semibold text-slate-300 mb-1">สรุปผลการทดสอบ</h2>
           <p className="text-5xl font-extrabold my-3">
@@ -321,10 +332,16 @@ function ResultScreen({
         {grids.map((grid, p) => (
           <div key={p} className="bg-white text-slate-800 border border-slate-300 rounded-2xl p-4 shadow-xl overflow-x-auto mb-4">
             {grids.length > 1 && <p className="text-sm font-semibold text-slate-600 mb-2">หน้า {p + 1}</p>}
-            <div className="flex flex-col gap-1 min-w-max">
+            <div className={`flex flex-col ${compact ? "gap-0.5" : "gap-1"} min-w-max`}>
               {grid.map((row, r) => (
-                <div key={r} className="flex items-center gap-1">
-                  <span className="w-7 text-right text-xs text-slate-400 mr-1 shrink-0">{r + 1}.</span>
+                <div key={r} className={`flex items-center ${compact ? "gap-0.5" : "gap-1"}`}>
+                  <span
+                    className={`text-right text-slate-400 mr-1 shrink-0 ${
+                      compact ? "w-6 text-[10px]" : "w-7 text-xs"
+                    }`}
+                  >
+                    {r + 1}.
+                  </span>
                   {row.map((cell, c) => {
                     const key = `${p}-${r}-${c}`;
                     const isMarked = marked.has(key);
@@ -342,14 +359,16 @@ function ResultScreen({
                     return (
                       <span
                         key={c}
-                        className={`relative w-9 h-9 shrink-0 flex items-center justify-center rounded ${cellBg}`}
+                        className={`relative shrink-0 flex items-center justify-center rounded ${
+                          compact ? "w-7 h-7" : "w-9 h-9"
+                        } ${cellBg}`}
                       >
                         <ShapeIcon
                           kind={cell.shape.kind}
                           filled={cell.shape.filled}
                           color={cell.shape.color}
                           digit={cell.shape.digit}
-                          className="w-6 h-6"
+                          className={compact ? "w-5 h-5" : "w-6 h-6"}
                         />
                         {slashColor && (
                           <span className="absolute inset-0 flex items-center justify-center">
