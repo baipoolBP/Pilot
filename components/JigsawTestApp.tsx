@@ -1,12 +1,35 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { generateSet, JigsawQuestion, Mode, TOTAL_QUESTIONS, TOTAL_TIME } from "@/lib/jigsawTest";
+import {
+  generateSet,
+  JigsawQuestion,
+  Mode,
+  MAX_PIECES,
+  MIN_PIECES,
+  TOTAL_QUESTIONS,
+  TOTAL_TIME,
+} from "@/lib/jigsawTest";
 import PolygonIcon from "@/components/PolygonIcon";
 
 type Phase = "start" | "running" | "result";
 
 const CHOICE_LABELS = ["ก", "ข", "ค", "ง", "จ"];
+
+const MODE_INFO: Record<Mode, { title: string; hint: string }> = {
+  "fragments-to-whole": {
+    title: "แบบ 1: ชิ้นส่วนจิ๊กซอ → เลือกรูปที่ประกอบได้",
+    hint: "ชิ้นส่วนซ้ายประกอบกันเป็นรูปทรงใดในตัวเลือกขวา (ตัวเลือกแต่ละข้อเป็นรูปทรงคนละแบบ)",
+  },
+  "match-seam": {
+    title: "แบบ 2: ชิ้นส่วนจิ๊กซอ → เลือกรอยต่อที่ตรงกัน",
+    hint: "ชิ้นส่วนซ้ายตัดจากรูปทรงเดียวกับตัวเลือกขวาทั้งหมด แต่มีรอยต่อต่างกัน เลือกรอยต่อที่ตรงกับชิ้นส่วนที่ให้มา",
+  },
+  "whole-to-fragments": {
+    title: "แบบ 3: รูปสำเร็จ → เลือกชิ้นส่วนที่ประกอบได้",
+    hint: "รูปทางซ้ายไม่มีรอยต่อ เลือกชุดชิ้นส่วนทางขวาที่ประกอบกันเป็นรูปนั้นได้ (ทุกตัวเลือกมีจำนวนชิ้นเท่ากัน)",
+  },
+};
 
 export default function JigsawTestApp() {
   const [phase, setPhase] = useState<Phase>("start");
@@ -57,7 +80,7 @@ export default function JigsawTestApp() {
 
   return (
     <div className="min-h-screen flex flex-col items-center px-4 py-4">
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-5xl">
         <div className="flex items-center justify-between mb-2 text-sm text-slate-300">
           <span>ประกอบรูปภาพ — {TOTAL_QUESTIONS} ข้อ</span>
           <button
@@ -71,11 +94,7 @@ export default function JigsawTestApp() {
 
         <div className="sticky top-14 z-10 bg-white/95 backdrop-blur text-slate-800 border border-slate-300 rounded-2xl p-3 mb-3 shadow-xl">
           <div className="flex items-center justify-between gap-4 flex-wrap">
-            <p className="text-xs sm:text-sm text-slate-700">
-              {mode === "fragments-to-whole"
-                ? "ชิ้นส่วนซ้ายประกอบกันเป็นรูปใดในตัวเลือกขวา"
-                : "ตัวเลือกชุดใดประกอบกันเป็นรูปทางซ้ายได้"}
-            </p>
+            <p className="text-xs sm:text-sm text-slate-700">{MODE_INFO[mode].hint}</p>
             <div className="flex-1 min-w-[160px]">
               <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
                 <div
@@ -90,7 +109,7 @@ export default function JigsawTestApp() {
           </div>
         </div>
 
-        <div className="bg-white text-slate-800 border border-slate-300 rounded-2xl p-4 shadow-xl">
+        <div className="bg-white text-slate-800 border border-slate-300 rounded-2xl p-4 shadow-xl overflow-x-auto">
           <div className="flex flex-col divide-y divide-slate-100">
             {questions.map((q, i) => (
               <QuestionRow
@@ -129,16 +148,16 @@ function QuestionRow({
   const isRowCorrect = !interactive && selected === question.correctIndex;
 
   return (
-    <div className="flex items-center gap-4 py-4 flex-wrap lg:flex-nowrap">
+    <div className="flex items-center gap-4 py-4 flex-wrap xl:flex-nowrap">
       <span className="w-7 text-right text-xs text-slate-400 shrink-0">{index + 1}.</span>
 
       <div className="flex items-center gap-1.5 shrink-0 bg-slate-50 border border-slate-200 rounded-xl p-2">
-        {question.mode === "fragments-to-whole" ? (
-          question.promptPieces!.map((piece, i) => (
-            <PolygonIcon key={i} points={piece} className="w-12 h-12 text-slate-700" />
-          ))
+        {question.promptWhole ? (
+          <PolygonIcon points={question.promptWhole} className="w-14 h-14 text-slate-700" />
         ) : (
-          <PolygonIcon points={question.promptWhole!} className="w-14 h-14 text-slate-700" />
+          question.promptPieces!.map((piece, i) => (
+            <PolygonIcon key={i} points={piece} className="w-10 h-10 text-slate-700" />
+          ))
         )}
       </div>
 
@@ -164,12 +183,18 @@ function QuestionRow({
               onClick={() => onSelect?.(ci)}
               className={`flex flex-col items-center gap-0.5 rounded-xl border-2 p-1.5 transition-colors ${cls}`}
             >
-              {c.whole ? (
-                <PolygonIcon points={c.whole} className="w-11 h-11 text-slate-700" />
-              ) : (
-                <div className="flex items-center gap-0.5">
-                  {c.pieces!.map((piece, pi) => (
-                    <PolygonIcon key={pi} points={piece} className="w-8 h-8 text-slate-700" />
+              {c.whole && <PolygonIcon points={c.whole} className="w-11 h-11 text-slate-700" />}
+              {c.wholeWithSeam && (
+                <PolygonIcon
+                  points={c.wholeWithSeam.poly}
+                  seam={c.wholeWithSeam.seam}
+                  className="w-11 h-11 text-slate-700"
+                />
+              )}
+              {c.pieces && (
+                <div className="flex items-center gap-0.5 flex-wrap justify-center max-w-[90px]">
+                  {c.pieces.map((piece, pi) => (
+                    <PolygonIcon key={pi} points={piece} className="w-7 h-7 text-slate-700" />
                   ))}
                 </div>
               )}
@@ -206,33 +231,29 @@ function StartScreen({
         <div className="text-left mb-6">
           <p className="text-sm text-slate-300 mb-2">เลือกรูปแบบการทำ:</p>
           <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={() => onChangeMode("fragments-to-whole")}
-              className={`rounded-xl py-3 px-4 text-sm font-semibold border text-left transition-colors ${
-                mode === "fragments-to-whole"
-                  ? "bg-sky-600 border-sky-500 text-white"
-                  : "bg-slate-900/50 border-slate-700 text-slate-300 hover:border-slate-500"
-              }`}
-            >
-              แบบ 1: มีชิ้นส่วนจิ๊กซอทางซ้าย → เลือกรูปที่ประกอบได้จากตัวเลือกขวา
-            </button>
-            <button
-              type="button"
-              onClick={() => onChangeMode("whole-to-fragments")}
-              className={`rounded-xl py-3 px-4 text-sm font-semibold border text-left transition-colors ${
-                mode === "whole-to-fragments"
-                  ? "bg-sky-600 border-sky-500 text-white"
-                  : "bg-slate-900/50 border-slate-700 text-slate-300 hover:border-slate-500"
-              }`}
-            >
-              แบบ 2: มีรูปสำเร็จทางซ้าย → เลือกชิ้นส่วนจิ๊กซอที่ประกอบเป็นรูปนั้นได้จากตัวเลือกขวา
-            </button>
+            {(Object.keys(MODE_INFO) as Mode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => onChangeMode(m)}
+                className={`rounded-xl py-3 px-4 text-sm font-semibold border text-left transition-colors ${
+                  mode === m
+                    ? "bg-sky-600 border-sky-500 text-white"
+                    : "bg-slate-900/50 border-slate-700 text-slate-300 hover:border-slate-500"
+                }`}
+              >
+                {MODE_INFO[m].title}
+                <span className="block text-xs font-normal mt-0.5 opacity-80">{MODE_INFO[m].hint}</span>
+              </button>
+            ))}
           </div>
         </div>
 
         <ul className="text-left text-sm text-slate-300 space-y-2 mb-8 bg-slate-900/50 rounded-xl p-5">
-          <li>• รูปที่ประกอบสำเร็จแล้วจะไม่มีรอยต่อให้เห็น ต้องจินตนาการประกอบเอง</li>
+          <li>
+            • แต่ละข้อมีชิ้นส่วนจิ๊กซอสุ่ม <b className="text-white">{MIN_PIECES}-{MAX_PIECES} ชิ้น</b>
+          </li>
+          <li>• รูปที่ไม่มีรอยต่อจะไม่แสดงเส้นแบ่งใดๆ ต้องจินตนาการประกอบเอง</li>
           <li>
             • ทั้งหมด <b className="text-white">{TOTAL_QUESTIONS} ข้อ</b> เรียงลงมาในหน้าเดียว มีตัวเลือกให้ 5 ข้อ (ก-จ)
           </li>
@@ -266,7 +287,7 @@ function ResultScreen({
 
   return (
     <div className="min-h-screen flex flex-col items-center px-4 py-10">
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-5xl">
         <div className="bg-slate-800/70 border border-slate-700 rounded-2xl p-8 shadow-xl mb-6 text-center">
           <h2 className="text-xl font-semibold text-slate-300 mb-1">สรุปผลการทดสอบ</h2>
           <p className="text-5xl font-extrabold my-3">
@@ -290,7 +311,7 @@ function ResultScreen({
           <span className="text-amber-600 font-semibold">เหลือง = คำตอบที่ถูกต้อง (ไม่ได้เลือกไว้)</span>
         </p>
 
-        <div className="bg-white text-slate-800 border border-slate-300 rounded-2xl p-4 shadow-xl">
+        <div className="bg-white text-slate-800 border border-slate-300 rounded-2xl p-4 shadow-xl overflow-x-auto">
           <div className="flex flex-col divide-y divide-slate-100">
             {questions.map((q, i) => (
               <QuestionRow key={i} index={i} question={q} selected={answers[i]} interactive={false} />
