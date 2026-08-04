@@ -56,9 +56,11 @@ function pickRandom(n: number, excludeIds: Set<string>): LineSymbol[] {
   return shuffle(SYMBOL_POOL.filter((s) => !excludeIds.has(s.id))).slice(0, n);
 }
 
-export function generateQuestion(): FormQuestion {
+// maxMatches caps how many of the 5 candidates may match a key: 1 means each
+// row has either 0 or 1 match, 2 (default) means 0, 1, or 2.
+export function generateQuestion(maxMatches: 1 | 2 = 2): FormQuestion {
   const [key1, key2] = pickRandom(2, new Set());
-  const matchCount = Math.floor(Math.random() * 3); // 0, 1, or 2
+  const matchCount = Math.floor(Math.random() * (maxMatches + 1)); // 0..maxMatches
 
   const matches: LineSymbol[] =
     matchCount === 2 ? [key1, key2] : matchCount === 1 ? [Math.random() < 0.5 ? key1 : key2] : [];
@@ -73,8 +75,8 @@ export function generateQuestion(): FormQuestion {
   return { keys: [key1, key2], candidates, correctIndices };
 }
 
-export function generateForm(): FormQuestion[] {
-  return Array.from({ length: TOTAL_QUESTIONS }, () => generateQuestion());
+export function generateForm(maxMatches: 1 | 2 = 2): FormQuestion[] {
+  return Array.from({ length: TOTAL_QUESTIONS }, () => generateQuestion(maxMatches));
 }
 
 export interface FormAnswer {

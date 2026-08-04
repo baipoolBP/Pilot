@@ -16,13 +16,14 @@ type Phase = "start" | "running" | "result";
 
 export default function FormPerceptionApp() {
   const [phase, setPhase] = useState<Phase>("start");
+  const [maxMatches, setMaxMatches] = useState<1 | 2>(2);
   const [questions, setQuestions] = useState<FormQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<number, FormAnswer>>({});
   const [pageIndex, setPageIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(TOTAL_TIME);
 
   function startTest() {
-    setQuestions(generateForm());
+    setQuestions(generateForm(maxMatches));
     setAnswers({});
     setPageIndex(0);
     setPhase("running");
@@ -52,7 +53,7 @@ export default function FormPerceptionApp() {
       if (selected.has(candIndex)) {
         selected.delete(candIndex);
       } else {
-        if (selected.size >= 2) return prev;
+        if (selected.size >= maxMatches) return prev;
         selected.add(candIndex);
       }
       return { ...prev, [qIndex]: { selected, no: false } };
@@ -67,7 +68,7 @@ export default function FormPerceptionApp() {
   }
 
   if (phase === "start") {
-    return <StartScreen onStart={startTest} />;
+    return <StartScreen maxMatches={maxMatches} onChangeMaxMatches={setMaxMatches} onStart={startTest} />;
   }
 
   if (phase === "result") {
@@ -97,7 +98,7 @@ export default function FormPerceptionApp() {
         <div className="sticky top-14 z-10 bg-white/95 backdrop-blur text-slate-800 border border-slate-300 rounded-2xl p-3 mb-3 shadow-xl">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <p className="text-xs sm:text-sm text-slate-700">
-              เทียบ 2 รูปทางซ้ายกับ 5 ตัวเลือกทางขวา ติ๊กตัวที่เหมือน (มีได้ 0-2 ตัว) ไม่มีให้ติ๊ก NO
+              เทียบ 2 รูปทางซ้ายกับ 5 ตัวเลือกทางขวา ติ๊กตัวที่เหมือน (มีได้ 0-{maxMatches} ตัว) ไม่มีให้ติ๊ก NO
             </p>
             <div className="flex-1 min-w-[160px]">
               <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
@@ -145,7 +146,7 @@ export default function FormPerceptionApp() {
         </div>
 
         <p className="text-center text-xs text-slate-500 mt-4">
-          คลิกตัวเลือกเพื่อติ๊ก/ยกเลิกติ๊ก (สูงสุด 2 ตัว) — หมดเวลาหรือกดส่งคำตอบแล้วระบบจะตรวจให้ทันที
+          คลิกตัวเลือกเพื่อติ๊ก/ยกเลิกติ๊ก (สูงสุด {maxMatches} ตัว) — หมดเวลาหรือกดส่งคำตอบแล้วระบบจะตรวจให้ทันที
         </p>
       </div>
     </div>
@@ -241,12 +242,48 @@ function QuestionRow({
   );
 }
 
-function StartScreen({ onStart }: { onStart: () => void }) {
+function StartScreen({
+  maxMatches,
+  onChangeMaxMatches,
+  onStart,
+}: {
+  maxMatches: 1 | 2;
+  onChangeMaxMatches: (v: 1 | 2) => void;
+  onStart: () => void;
+}) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-xl bg-slate-800/70 border border-slate-700 rounded-2xl p-8 shadow-xl text-center">
         <h1 className="text-2xl sm:text-3xl font-bold mb-2">หารูปที่เหมือนกัน</h1>
         <p className="text-slate-300 mb-6">ฝึกการรับรู้และเปรียบเทียบรูปทรงอย่างรวดเร็ว เตรียมสอบนักบิน กองทัพเรือ</p>
+
+        <div className="text-left mb-6">
+          <p className="text-sm text-slate-300 mb-2">เลือกจำนวนตัวเลือกที่อาจเหมือนกันได้สูงสุดต่อข้อ:</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => onChangeMaxMatches(1)}
+              className={`flex-1 rounded-xl py-3 text-sm font-semibold border transition-colors ${
+                maxMatches === 1
+                  ? "bg-sky-600 border-sky-500 text-white"
+                  : "bg-slate-900/50 border-slate-700 text-slate-300 hover:border-slate-500"
+              }`}
+            >
+              0-1 ตัว (ง่ายกว่า)
+            </button>
+            <button
+              type="button"
+              onClick={() => onChangeMaxMatches(2)}
+              className={`flex-1 rounded-xl py-3 text-sm font-semibold border transition-colors ${
+                maxMatches === 2
+                  ? "bg-sky-600 border-sky-500 text-white"
+                  : "bg-slate-900/50 border-slate-700 text-slate-300 hover:border-slate-500"
+              }`}
+            >
+              0-2 ตัว (มาตรฐาน)
+            </button>
+          </div>
+        </div>
 
         <ul className="text-left text-sm text-slate-300 space-y-2 mb-8 bg-slate-900/50 rounded-xl p-5">
           <li>
@@ -254,13 +291,14 @@ function StartScreen({ onStart }: { onStart: () => void }) {
             <b className="text-white">5 รูป</b> ทางขวา
           </li>
           <li>
-            • ติ๊กตัวเลือกที่ <b className="text-white">เหมือนกับรูปทางซ้าย</b> ตัวใดตัวหนึ่ง (มีได้ 0, 1 หรือ 2 ตัว)
+            • ติ๊กตัวเลือกที่ <b className="text-white">เหมือนกับรูปทางซ้าย</b> ตัวใดตัวหนึ่ง (มีได้ 0
+            {maxMatches === 2 ? ", 1 หรือ 2 ตัว" : " หรือ 1 ตัว"})
           </li>
           <li>
             • ถ้าไม่มีตัวเลือกใดเหมือนเลย ให้ติ๊ก <b className="text-white">NO</b> แทน
           </li>
           <li>
-            • ทั้งหมด <b className="text-white">60 ข้อ</b> แบ่งเป็น <b className="text-white">3 หน้า</b> (หน้าละ 20
+            • ทั้งหมด <b className="text-white">60 ข้อ</b> แบ่งเป็น <b className="text-white">6 หน้า</b> (หน้าละ 10
             ข้อ) กด &quot;ไปหน้าถัดไป&quot; เองเมื่อทำหน้าปัจจุบันเสร็จ
           </li>
           <li>
