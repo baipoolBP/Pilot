@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { generateSet, InequalityQuestion, Verdict, TOTAL_QUESTIONS, TOTAL_TIME } from "@/lib/inequalityTest";
+import { generateSet, InequalityQuestion, Relation, Verdict, TOTAL_QUESTIONS, TOTAL_TIME } from "@/lib/inequalityTest";
+import RelationIcon from "@/components/RelationIcon";
 
 type Phase = "start" | "running" | "result";
 
@@ -123,11 +124,19 @@ function QuestionRow({
   return (
     <div className="flex items-center gap-3 py-2 flex-wrap sm:flex-nowrap">
       <span className="w-7 text-right text-xs text-slate-400 shrink-0">{index + 1}.</span>
-      <span className="font-mono text-base sm:text-lg text-slate-800 shrink-0">
-        A {question.a} B {question.b} C
+      <span className="flex items-center gap-1 font-mono text-base sm:text-lg text-slate-800 shrink-0">
+        <span>A</span>
+        <RelationIcon symbol={question.a} className="w-5 h-5 sm:w-6 sm:h-6" />
+        <span>B</span>
+        <RelationIcon symbol={question.b} className="w-5 h-5 sm:w-6 sm:h-6" />
+        <span>C</span>
       </span>
       <span className="text-slate-400 shrink-0">∴</span>
-      <span className="font-mono text-base sm:text-lg text-slate-800 shrink-0">A {question.conclusion} C</span>
+      <span className="flex items-center gap-1 font-mono text-base sm:text-lg text-slate-800 shrink-0">
+        <span>A</span>
+        <RelationIcon symbol={question.conclusion} className="w-5 h-5 sm:w-6 sm:h-6" />
+        <span>C</span>
+      </span>
       <div className="flex items-center gap-1.5 sm:ml-auto">
         {(["True", "False", "?"] as Verdict[]).map((v) => {
           const isSelected = selected === v;
@@ -169,18 +178,47 @@ function StartScreen({ onStart }: { onStart: () => void }) {
         <h1 className="text-2xl sm:text-3xl font-bold mb-2">พิจารณาอสมการ</h1>
         <p className="text-slate-300 mb-6">ฝึกการให้เหตุผลเชิงตรรกะจากอสมการ เตรียมสอบนักบิน กองทัพเรือ</p>
 
-        <ul className="text-left text-sm text-slate-300 space-y-2 mb-8 bg-slate-900/50 rounded-xl p-5">
-          <li>
-            • แต่ละข้อกำหนดความสัมพันธ์ระหว่าง <b className="text-white">A, B, C</b> เช่น{" "}
-            <span className="font-mono text-white">A &lt; B &gt; C</span>
+        <ul className="text-left text-sm text-slate-300 space-y-3 mb-8 bg-slate-900/50 rounded-xl p-5">
+          <li className="flex items-center flex-wrap gap-x-1.5 gap-y-1">
+            <span>• แต่ละข้อกำหนดความสัมพันธ์ระหว่าง</span>
+            <b className="text-white">A, B, C</b>
+            <span>เช่น</span>
+            <span className="inline-flex items-center gap-1 font-mono text-white">
+              <span>A</span>
+              <RelationIcon symbol="<" className="w-4 h-4" />
+              <span>B</span>
+              <RelationIcon symbol=">" className="w-4 h-4" />
+              <span>C</span>
+            </span>
           </li>
-          <li className="font-mono text-white">
-            &lt; น้อยกว่า &nbsp; &gt; มากกว่า &nbsp; = เท่ากับ &nbsp; ≠ ไม่เท่ากับ &nbsp; ≥ ไม่น้อยกว่า &nbsp; ≤ ไม่มากกว่า
+          <li className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+            {(
+              [
+                ["<", "น้อยกว่า"],
+                [">", "มากกว่า"],
+                ["=", "เท่ากับ"],
+                ["≠", "ไม่เท่ากับ"],
+                ["≥", "ไม่น้อยกว่า"],
+                ["≤", "ไม่มากกว่า"],
+              ] as [Relation, string][]
+            ).map(([sym, label]) => (
+              <span key={sym} className="inline-flex items-center gap-1">
+                <RelationIcon symbol={sym} className="w-4 h-4 text-white" />
+                <span>{label}</span>
+              </span>
+            ))}
           </li>
-          <li>
-            • แล้วให้พิจารณาข้อสรุปที่กำหนด เช่น <span className="font-mono text-white">A = C</span> ว่าเป็นจริงเสมอ (
-            <b className="text-white">True</b>), เป็นเท็จเสมอ (<b className="text-white">False</b>) หรือสรุปแน่นอนไม่ได้ (
-            <b className="text-white">?</b>)
+          <li className="flex items-center flex-wrap gap-x-1.5 gap-y-1">
+            <span>• แล้วให้พิจารณาข้อสรุปที่กำหนด เช่น</span>
+            <span className="inline-flex items-center gap-1 font-mono text-white">
+              <span>A</span>
+              <RelationIcon symbol="=" className="w-4 h-4" />
+              <span>C</span>
+            </span>
+            <span>
+              ว่าเป็นจริงเสมอ (<b className="text-white">True</b>), เป็นเท็จเสมอ (<b className="text-white">False</b>)
+              หรือสรุปแน่นอนไม่ได้ (<b className="text-white">?</b>)
+            </span>
           </li>
           <li>
             • ทั้งหมด <b className="text-white">{TOTAL_QUESTIONS} ข้อ</b> เรียงลงมาในหน้าเดียว ไม่มีข้อไหนซ้ำกัน
