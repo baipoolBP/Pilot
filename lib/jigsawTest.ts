@@ -1,8 +1,9 @@
 // Jigsaw-assembly ("ประกอบรูปภาพ") spatial-reasoning test.
 //
-// Every question picks one shape family and one instance of it (the
-// "target"), plus a piece count (3-5, randomized per question). Three
-// interaction modes share this generation:
+// Every question picks one shape template (of 50, see TEMPLATES below) and
+// builds one randomized instance of it (the "target"), plus a piece count
+// (3-5, randomized per question). Three interaction modes share this
+// generation:
 //
 //   - "fragments-to-whole": show the target's N cut pieces (scattered,
 //     rotated). Choices are 5 different whole shapes (one per shape family,
@@ -28,7 +29,6 @@
 
 import { Point, Polygon, centroid, pieSlice, pointAtParam, polygonArea, rotate } from "@/lib/polygon";
 
-export type ShapeFamily = "cross" | "triangle" | "circle" | "star" | "hexagon" | "rect";
 export type Mode = "fragments-to-whole" | "match-seam" | "whole-to-fragments";
 
 export const TOTAL_QUESTIONS = 20;
@@ -45,40 +45,44 @@ function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
 }
 
-// ---- shape family generators (all normalized to roughly fit a -50..50 box) ----
+function polarPoint(r: number, a: number): Point {
+  return [r * Math.cos(a), r * Math.sin(a)];
+}
 
-function crossPoly(armWidth: number): Polygon {
-  const s = 45;
-  const w = armWidth;
-  return [
-    [-w, -s], [w, -s], [w, -w], [s, -w], [s, w], [w, w],
-    [w, s], [-w, s], [-w, w], [-s, w], [-s, -w], [-w, -w],
-  ];
+// ---- radial polygon builders ----
+// Every builder places vertices at strictly increasing angles around the
+// origin, which guarantees the result is star-shaped w.r.t. the origin (any
+// straight line from the origin to a boundary point stays inside) — the
+// property pieSlice() in polygon.ts depends on for a correct cut.
+
+// Regular N-gon (triangle, pentagon, hexagon, ... up to a near-circle).
+function regularPoly(n: number, r: number): Polygon {
+  return Array.from({ length: n }, (_, i) => polarPoint(r, (i / n) * 2 * Math.PI - Math.PI / 2));
 }
-function trianglePoly(apexDx: number): Polygon {
-  return [[apexDx, -50], [45, 35], [-45, 35]];
-}
-function circlePoly(r: number, n = 16): Polygon {
+
+// Alternating spike/valley polygon (star, gear, burst) — `arms` points.
+function spikyPoly(arms: number, outerR: number, innerR: number): Polygon {
+  const n = arms * 2;
   return Array.from({ length: n }, (_, i) => {
-    const a = (i / n) * 2 * Math.PI - Math.PI / 2;
-    return [r * Math.cos(a), r * Math.sin(a)] as Point;
+    const r = i % 2 === 0 ? outerR : innerR;
+    return polarPoint(r, (i / n) * 2 * Math.PI - Math.PI / 2);
   });
 }
-function starPoly(outerR: number, innerR: number): Polygon {
+
+// Flat-topped protrusions (cross/plus, snowflake) — `arms` blocky spikes.
+function notchedPoly(arms: number, outerR: number, innerR: number, armWidthRatio: number): Polygon {
+  const anglePerArm = (2 * Math.PI) / arms;
+  const halfArmAngle = anglePerArm * armWidthRatio * 0.5;
   const pts: Polygon = [];
-  for (let i = 0; i < 10; i++) {
-    const r = i % 2 === 0 ? outerR : innerR;
-    const a = (i / 10) * 2 * Math.PI - Math.PI / 2;
-    pts.push([r * Math.cos(a), r * Math.sin(a)]);
+  for (let i = 0; i < arms; i++) {
+    const centerAngle = (i / arms) * 2 * Math.PI - Math.PI / 2;
+    pts.push(polarPoint(innerR, centerAngle - anglePerArm / 2));
+    pts.push(polarPoint(outerR, centerAngle - halfArmAngle));
+    pts.push(polarPoint(outerR, centerAngle + halfArmAngle));
   }
   return pts;
 }
-function hexagonPoly(r: number): Polygon {
-  return Array.from({ length: 6 }, (_, i) => {
-    const a = (i / 6) * 2 * Math.PI - Math.PI / 2;
-    return [r * Math.cos(a), r * Math.sin(a)] as Point;
-  });
-}
+
 function rectPoly(w: number, h: number, skew: number): Polygon {
   return [
     [-w / 2 + skew, -h / 2], [w / 2 + skew, -h / 2],
@@ -87,25 +91,45 @@ function rectPoly(w: number, h: number, skew: number): Polygon {
 }
 
 interface ShapeInstance {
-  family: ShapeFamily;
+  templateId: string;
   poly: Polygon;
 }
 
-const FAMILIES: ShapeFamily[] = ["cross", "triangle", "circle", "star", "hexagon", "rect"];
-
-function generateInstance(family: ShapeFamily): ShapeInstance {
-  switch (family) {
-    case "cross": return { family, poly: crossPoly(rand(11, 20)) };
-    case "triangle": return { family, poly: trianglePoly(rand(-20, 20)) };
-    case "circle": return { family, poly: circlePoly(rand(36, 50)) };
-    case "star": return { family, poly: starPoly(rand(42, 52), rand(14, 26)) };
-    case "hexagon": return { family, poly: hexagonPoly(rand(36, 50)) };
-    case "rect": return { family, poly: rectPoly(rand(70, 95), rand(45, 68), rand(-18, 18)) };
-  }
+interface ShapeTemplate {
+  id: string;
+  build: () => Polygon;
 }
 
-function pickOtherFamilies(exclude: ShapeFamily, count: number): ShapeFamily[] {
-  return shuffle(FAMILIES.filter((f) => f !== exclude)).slice(0, count);
+// 50 distinct templates so a question's 5 choices never look like mere size
+// variants of one shape. Built programmatically from a handful of
+// radially-guaranteed-valid generators rather than 50 bespoke definitions.
+const TEMPLATES: ShapeTemplate[] = [
+  ...[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 20].map(
+    (n): ShapeTemplate => ({ id: `regular-${n}`, build: () => regularPoly(n, rand(38, 50)) })
+  ),
+  ...[3, 4, 5, 6, 7, 8, 9, 10, 12].flatMap((arms): ShapeTemplate[] => [
+    { id: `spiky-${arms}-sharp`, build: () => spikyPoly(arms, rand(42, 52), rand(12, 20)) },
+    { id: `spiky-${arms}-soft`, build: () => spikyPoly(arms, rand(40, 50), rand(24, 32)) },
+  ]),
+  ...[3, 4, 5, 6, 7, 8].flatMap((arms): ShapeTemplate[] => [
+    { id: `notched-${arms}-narrow`, build: () => notchedPoly(arms, rand(40, 50), rand(11, 18), rand(0.3, 0.4)) },
+    { id: `notched-${arms}-wide`, build: () => notchedPoly(arms, rand(40, 50), rand(11, 18), rand(0.48, 0.6)) },
+  ]),
+  ...[-22, -10, 10, 22].map(
+    (skew): ShapeTemplate => ({
+      id: `parallelogram-${skew}`,
+      build: () => rectPoly(rand(72, 95), rand(45, 65), skew + rand(-4, 4)),
+    })
+  ),
+];
+
+function generateInstance(templateId: string): ShapeInstance {
+  const template = TEMPLATES.find((t) => t.id === templateId)!;
+  return { templateId, poly: template.build() };
+}
+
+function pickOtherTemplateIds(exclude: string, count: number): string[] {
+  return shuffle(TEMPLATES.map((t) => t.id).filter((id) => id !== exclude)).slice(0, count);
 }
 
 // Spreads `count` cut positions across the boundary's [0, n) parameter space
@@ -171,14 +195,14 @@ export interface JigsawQuestion {
 }
 
 function generateQuestion(mode: Mode): JigsawQuestion {
-  const family = FAMILIES[Math.floor(Math.random() * FAMILIES.length)];
-  const target = generateInstance(family);
+  const templateId = TEMPLATES[Math.floor(Math.random() * TEMPLATES.length)].id;
+  const target = generateInstance(templateId);
   const pieceCount = Math.floor(rand(MIN_PIECES, MAX_PIECES + 1));
   const correctIndex = Math.floor(Math.random() * CHOICE_COUNT);
 
   if (mode === "fragments-to-whole") {
     const { pieces } = balancedCut(target.poly, pieceCount);
-    const otherInstances = pickOtherFamilies(family, CHOICE_COUNT - 1).map(generateInstance);
+    const otherInstances = pickOtherTemplateIds(templateId, CHOICE_COUNT - 1).map(generateInstance);
     const choices: JigsawChoice[] = [];
     let dp = 0;
     for (let i = 0; i < CHOICE_COUNT; i++) {
@@ -209,7 +233,7 @@ function generateQuestion(mode: Mode): JigsawQuestion {
   }
 
   // whole-to-fragments
-  const otherInstances = pickOtherFamilies(family, CHOICE_COUNT - 1).map(generateInstance);
+  const otherInstances = pickOtherTemplateIds(templateId, CHOICE_COUNT - 1).map(generateInstance);
   const choices: JigsawChoice[] = [];
   let dp = 0;
   for (let i = 0; i < CHOICE_COUNT; i++) {
