@@ -133,8 +133,9 @@ function QuestionRow({
           const isSelected = selected === v;
           let cls = "border-slate-300 text-slate-600 hover:bg-slate-100";
           if (!interactive) {
-            if (v === question.answer) cls = "border-emerald-500 bg-emerald-100 text-emerald-700";
-            else if (isSelected) cls = "border-rose-500 bg-rose-100 text-rose-700";
+            if (v === question.answer && isSelected) cls = "border-emerald-500 bg-emerald-100 text-emerald-700";
+            else if (v === question.answer && !isSelected) cls = "border-amber-500 bg-amber-100 text-amber-700";
+            else if (v !== question.answer && isSelected) cls = "border-rose-500 bg-rose-100 text-rose-700";
             else cls = "border-slate-200 text-slate-300";
           } else if (isSelected) {
             cls = "border-indigo-500 bg-indigo-100 text-indigo-700";
@@ -173,13 +174,16 @@ function StartScreen({ onStart }: { onStart: () => void }) {
             • แต่ละข้อกำหนดความสัมพันธ์ระหว่าง <b className="text-white">A, B, C</b> เช่น{" "}
             <span className="font-mono text-white">A &lt; B &gt; C</span>
           </li>
+          <li className="font-mono text-white">
+            &lt; น้อยกว่า &nbsp; &gt; มากกว่า &nbsp; = เท่ากับ &nbsp; ≠ ไม่เท่ากับ &nbsp; ≥ ไม่น้อยกว่า &nbsp; ≤ ไม่มากกว่า
+          </li>
           <li>
             • แล้วให้พิจารณาข้อสรุปที่กำหนด เช่น <span className="font-mono text-white">A = C</span> ว่าเป็นจริงเสมอ (
             <b className="text-white">True</b>), เป็นเท็จเสมอ (<b className="text-white">False</b>) หรือสรุปแน่นอนไม่ได้ (
             <b className="text-white">?</b>)
           </li>
           <li>
-            • ทั้งหมด <b className="text-white">{TOTAL_QUESTIONS} ข้อ</b> เรียงลงมาในหน้าเดียว
+            • ทั้งหมด <b className="text-white">{TOTAL_QUESTIONS} ข้อ</b> เรียงลงมาในหน้าเดียว ไม่มีข้อไหนซ้ำกัน
           </li>
           <li>
             • จับเวลารวม <b className="text-white">10 นาที</b> ทำให้เร็วและแม่นที่สุด
@@ -230,8 +234,9 @@ function ResultScreen({
         </div>
 
         <p className="text-xs text-slate-500 mb-3">
-          ตรวจคำตอบ: <span className="text-emerald-600 font-semibold">เขียว = คำตอบที่ถูกต้อง</span>{" "}
-          <span className="text-rose-600 font-semibold">แดง = คำตอบที่คุณเลือก (ผิด)</span>
+          ตรวจคำตอบ: <span className="text-emerald-600 font-semibold">เขียว = ตอบถูก</span>{" "}
+          <span className="text-rose-600 font-semibold">แดง = คำตอบที่คุณเลือก (ผิด)</span>{" "}
+          <span className="text-amber-600 font-semibold">เหลือง = คำตอบที่ถูกต้อง (ไม่ได้เลือกไว้)</span>
         </p>
 
         <div className="bg-white text-slate-800 border border-slate-300 rounded-2xl p-4 shadow-xl">
